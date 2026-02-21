@@ -5,8 +5,8 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 // Remove stored options.
-delete_option( 'bpnp_settings' );
-delete_option( 'bpnp_purge_log' );
+delete_option( 'bpcu_notifications_settings' );
+delete_option( 'bpcu_notifications_log' );
 
-// Clear scheduled cron hook.
-wp_clear_scheduled_hook( 'bpnp_daily_purge' );
+// Clear scheduled cron hooks.
+wp_clear_scheduled_hook( 'bpcu_notifications_daily_purge' );

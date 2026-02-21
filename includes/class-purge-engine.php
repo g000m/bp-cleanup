@@ -4,7 +4,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-class BPNP_Purge_Engine {
+class BPCU_Notification_Purge_Engine {
 
 	/**
 	 * Run the purge process.
@@ -17,7 +17,7 @@ class BPNP_Purge_Engine {
 	public static function run( $dry_run = false, $overrides = array(), $is_cron = false ) {
 		global $wpdb;
 
-		$settings = wp_parse_args( $overrides, bpnp_get_settings() );
+		$settings = wp_parse_args( $overrides, bpcu_get_notification_settings() );
 
 		if ( ! $settings['enabled'] && $is_cron ) {
 			return array(
@@ -75,7 +75,7 @@ class BPNP_Purge_Engine {
 
 		// Log the run.
 		$event = $dry_run ? 'dry_run' : 'purge';
-		BPNP_Purge_Logger::log( $event, $dry_run, $results );
+		BPCU_Notification_Logger::log( $event, $dry_run, $results );
 
 		return $results;
 	}

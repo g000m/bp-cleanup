@@ -5,23 +5,23 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * Manage BuddyBoss notification purging.
+ * Manage BuddyPress/BuddyBoss notification cleanup.
  *
  * ## EXAMPLES
  *
  *     # Dry run with defaults
- *     $ wp bp-notification-purge run --dry-run
+ *     $ wp bp-cleanup notifications run --dry-run
  *
  *     # Purge with custom thresholds
- *     $ wp bp-notification-purge run --unread-days=90 --read-days=45
+ *     $ wp bp-cleanup notifications run --unread-days=90 --read-days=45
  *
  *     # Show table statistics
- *     $ wp bp-notification-purge stats
+ *     $ wp bp-cleanup notifications stats
  *
  *     # Show recent purge logs
- *     $ wp bp-notification-purge logs
+ *     $ wp bp-cleanup notifications logs
  */
-class BPNP_CLI_Command extends WP_CLI_Command {
+class BPCU_Notifications_CLI_Command extends WP_CLI_Command {
 
 	/**
 	 * Run the notification purge.
@@ -75,7 +75,7 @@ class BPNP_CLI_Command extends WP_CLI_Command {
 		$mode = $dry_run ? 'DRY RUN' : 'LIVE';
 		WP_CLI::log( "Starting notification purge ({$mode})..." );
 
-		$results = BPNP_Purge_Engine::run( $dry_run, $overrides, false );
+		$results = BPCU_Notification_Purge_Engine::run( $dry_run, $overrides, false );
 
 		if ( isset( $results['skipped'] ) ) {
 			WP_CLI::warning( $results['reason'] );
@@ -104,7 +104,7 @@ class BPNP_CLI_Command extends WP_CLI_Command {
 	 * @param array $assoc_args Named args.
 	 */
 	public function stats( $args, $assoc_args ) {
-		$stats = BPNP_Purge_Engine::get_stats();
+		$stats = BPCU_Notification_Purge_Engine::get_stats();
 
 		WP_CLI::log( 'Notification Table Statistics' );
 		WP_CLI::log( '=============================' );
@@ -126,7 +126,7 @@ class BPNP_CLI_Command extends WP_CLI_Command {
 		WP_CLI::log( "Oldest notification:    {$stats['oldest_notification']}" );
 
 		// Show current settings.
-		$settings = bpnp_get_settings();
+		$settings = bpcu_get_notification_settings();
 		WP_CLI::log( '' );
 		WP_CLI::log( "Current Settings:" );
 		WP_CLI::log( "  Enabled:              " . ( $settings['enabled'] ? 'Yes' : 'No' ) );
@@ -135,7 +135,7 @@ class BPNP_CLI_Command extends WP_CLI_Command {
 		WP_CLI::log( "  Batch size:           {$settings['batch_size']}" );
 
 		// Show next scheduled cron.
-		$next = wp_next_scheduled( BPNP_CRON_HOOK );
+		$next = wp_next_scheduled( BPCU_NOTIFICATIONS_CRON_HOOK );
 		if ( $next ) {
 			$next_str = gmdate( 'Y-m-d H:i:s', $next ) . ' UTC';
 			WP_CLI::log( "  Next scheduled run:   {$next_str}" );
@@ -151,7 +151,7 @@ class BPNP_CLI_Command extends WP_CLI_Command {
 	 * @param array $assoc_args Named args.
 	 */
 	public function logs( $args, $assoc_args ) {
-		$logs = BPNP_Purge_Logger::get_logs();
+		$logs = BPCU_Notification_Logger::get_logs();
 
 		if ( empty( $logs ) ) {
 			WP_CLI::log( 'No purge runs recorded yet.' );
