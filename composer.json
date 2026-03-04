@@ -3,7 +3,7 @@
   "description": "Scheduled housekeeping for BuddyPress and BuddyBoss - purges old notifications.",
   "type": "wordpress-plugin",
   "license": "GPL-2.0-or-later",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "require": {
     "composer/installers": "^2.0",
     "php": ">=8.0",

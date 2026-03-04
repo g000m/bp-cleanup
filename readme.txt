@@ -4,7 +4,7 @@ Tags: buddypress, buddyboss, notifications, cleanup, cron, wp-cli
 Requires at least: 6.9
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.0.0
+Stable tag: 1.1.1
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,14 +53,24 @@ Users without a `wpf_last_login` usermeta entry are treated as never logged in.
 
 == Changelog ==
 
+= 1.1.1 =
+* Fix version alignment for the release.
+* Purge notifications for users who have never logged in.
+* Show never-logged-in counts in WP-CLI stats and logs.
+
 = 1.1.0 =
-* minimum PHP version bumped to 8.0.
-* adds CI github workflow
+* Raise minimum PHP to 8.0 and add CI checks.
 
 = 1.0.0 =
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.1.1 =
+Version alignment update for the release.
+
+= 1.1.0 =
+Adds never-logged-in notification cleanup and raises minimum PHP to 8.0.
 
 = 1.0.0 =
 Initial release.
