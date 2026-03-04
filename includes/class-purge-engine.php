@@ -42,11 +42,23 @@ class BPCU_Notification_Purge_Engine {
 		$sleep_us                = $is_cron ? 50000 : 0; // 50ms for cron
 
 		$results = array(
-			'unread_deleted' => 0,
-			'read_deleted'   => 0,
-			'meta_deleted'   => 0,
-			'dry_run'        => $dry_run,
+			'unread_deleted'          => 0,
+			'read_deleted'            => 0,
+			'never_logged_in_deleted' => 0,
+			'meta_deleted'            => 0,
+			'dry_run'                 => $dry_run,
 		);
+
+		// Phase 0: Purge notifications for users who never logged in.
+		$counts = self::purge_never_logged_in(
+			$table_notifications,
+			$table_meta,
+			$batch_size,
+			$dry_run,
+			$sleep_us
+		);
+		$results['never_logged_in_deleted'] = $counts['notifications'];
+		$results['meta_deleted']           += $counts['meta'];
 
 		// Phase 1: Purge unread notifications.
 		if ( $settings['purge_unread'] ) {
@@ -79,7 +91,7 @@ class BPCU_Notification_Purge_Engine {
 		}
 
 		// Phase 3: Cache invalidation (only if something was deleted and BB is active).
-		if ( ! $dry_run && ( $results['unread_deleted'] > 0 || $results['read_deleted'] > 0 ) ) {
+		if ( ! $dry_run && ( $results['unread_deleted'] > 0 || $results['read_deleted'] > 0 || $results['never_logged_in_deleted'] > 0 ) ) {
 			self::flush_caches();
 		}
 
@@ -183,6 +195,99 @@ class BPCU_Notification_Purge_Engine {
 	}
 
 	/**
+	 * Purge notifications for users who have never logged in.
+	 *
+	 * @param string $table_notifications Table name.
+	 * @param string $table_meta          Meta table name.
+	 * @param int    $batch_size          Rows per batch.
+	 * @param bool   $dry_run             Count only.
+	 * @param int    $sleep_us            Microseconds to sleep between batches.
+	 * @return array Counts: notifications, meta.
+	 */
+	private static function purge_never_logged_in( $table_notifications, $table_meta, $batch_size, $dry_run, $sleep_us ) {
+		global $wpdb;
+
+		$table_usermeta = $wpdb->usermeta;
+		$meta_key       = 'wpf_last_login';
+
+		if ( $dry_run ) {
+			$count = $wpdb->get_var( $wpdb->prepare(
+				"SELECT COUNT(*) FROM {$table_notifications} n
+				 WHERE NOT EXISTS (
+					SELECT 1 FROM {$table_usermeta} um
+					WHERE um.user_id = n.user_id AND um.meta_key = %s
+				 )",
+				$meta_key
+			) );
+
+			return array(
+				'notifications' => (int) $count,
+				'meta'          => 0,
+			);
+		}
+
+		$max_id = $wpdb->get_var( $wpdb->prepare(
+			"SELECT MAX(n.id) FROM {$table_notifications} n
+			 WHERE NOT EXISTS (
+				SELECT 1 FROM {$table_usermeta} um
+				WHERE um.user_id = n.user_id AND um.meta_key = %s
+			 )",
+			$meta_key
+		) );
+
+		if ( ! $max_id ) {
+			return array( 'notifications' => 0, 'meta' => 0 );
+		}
+
+		$cursor = 0;
+		$total_notifications = 0;
+		$total_meta          = 0;
+
+		while ( true ) {
+			$ids = $wpdb->get_col( $wpdb->prepare(
+				"SELECT n.id FROM {$table_notifications} n
+				 WHERE n.id > %d AND n.id <= %d
+				 AND NOT EXISTS (
+					SELECT 1 FROM {$table_usermeta} um
+					WHERE um.user_id = n.user_id AND um.meta_key = %s
+				 )
+				 ORDER BY n.id ASC LIMIT %d",
+				$cursor,
+				$max_id,
+				$meta_key,
+				$batch_size
+			) );
+
+			if ( empty( $ids ) ) {
+				break;
+			}
+
+			$id_placeholders = implode( ',', array_map( 'intval', $ids ) );
+
+			$meta_deleted = $wpdb->query(
+				"DELETE FROM {$table_meta} WHERE notification_id IN ({$id_placeholders})"
+			);
+			$total_meta += max( 0, (int) $meta_deleted );
+
+			$notif_deleted = $wpdb->query(
+				"DELETE FROM {$table_notifications} WHERE id IN ({$id_placeholders})"
+			);
+			$total_notifications += max( 0, (int) $notif_deleted );
+
+			$cursor = end( $ids );
+
+			if ( $sleep_us > 0 ) {
+				usleep( $sleep_us );
+			}
+		}
+
+		return array(
+			'notifications' => $total_notifications,
+			'meta'          => $total_meta,
+		);
+	}
+
+	/**
 	 * Check that all required tables exist.
 	 *
 	 * @param array $tables Table names.
@@ -236,12 +341,13 @@ class BPCU_Notification_Purge_Engine {
 
 		if ( ! self::tables_exist( array( $table_notifications, $table_meta ) ) ) {
 			return array(
-				'total_notifications' => 0,
-				'unread_count'        => 0,
-				'read_count'          => 0,
-				'meta_count'          => 0,
-				'oldest_notification' => 'N/A',
-				'notice'              => 'Required BuddyPress/BuddyBoss notification tables are missing.',
+				'total_notifications'   => 0,
+				'never_logged_in_count' => 0,
+				'unread_count'          => 0,
+				'read_count'            => 0,
+				'meta_count'            => 0,
+				'oldest_notification'   => 'N/A',
+				'notice'                => 'Required BuddyPress/BuddyBoss notification tables are missing.',
 			);
 		}
 
@@ -252,6 +358,14 @@ class BPCU_Notification_Purge_Engine {
 		$stats['unread_count']        = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_notifications} WHERE is_new = 1" );
 		$stats['read_count']          = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_notifications} WHERE is_new = 0" );
 		$stats['meta_count']          = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$table_meta}" );
+		$stats['never_logged_in_count'] = (int) $wpdb->get_var( $wpdb->prepare(
+			"SELECT COUNT(*) FROM {$table_notifications} n
+			 WHERE NOT EXISTS (
+				SELECT 1 FROM {$wpdb->usermeta} um
+				WHERE um.user_id = n.user_id AND um.meta_key = %s
+			 )",
+			'wpf_last_login'
+		) );
 
 		// Table sizes from information_schema.
 		$db_name = DB_NAME;

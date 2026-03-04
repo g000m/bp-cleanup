@@ -86,6 +86,7 @@ class BPCU_Notifications_CLI_Command extends WP_CLI_Command {
 
 		WP_CLI::log( '' );
 		WP_CLI::log( "Results:" );
+		WP_CLI::log( "  Never logged in:      {$verb} {$results['never_logged_in_deleted']}" );
 		WP_CLI::log( "  Unread notifications: {$verb} {$results['unread_deleted']}" );
 		WP_CLI::log( "  Read notifications:   {$verb} {$results['read_deleted']}" );
 
@@ -93,7 +94,7 @@ class BPCU_Notifications_CLI_Command extends WP_CLI_Command {
 			WP_CLI::log( "  Meta rows deleted:    {$results['meta_deleted']}" );
 		}
 
-		$total = $results['unread_deleted'] + $results['read_deleted'];
+		$total = $results['unread_deleted'] + $results['read_deleted'] + $results['never_logged_in_deleted'];
 		WP_CLI::success( "{$verb} {$total} total notifications." );
 	}
 
@@ -111,6 +112,7 @@ class BPCU_Notifications_CLI_Command extends WP_CLI_Command {
 		WP_CLI::log( '' );
 		WP_CLI::log( "Row Counts:" );
 		WP_CLI::log( "  Total notifications:  {$stats['total_notifications']}" );
+		WP_CLI::log( "  Never logged in:      {$stats['never_logged_in_count']}" );
 		WP_CLI::log( "  Unread (is_new=1):    {$stats['unread_count']}" );
 		WP_CLI::log( "  Read (is_new=0):      {$stats['read_count']}" );
 		WP_CLI::log( "  Meta rows:            {$stats['meta_count']}" );
@@ -161,15 +163,16 @@ class BPCU_Notifications_CLI_Command extends WP_CLI_Command {
 		$table_data = array();
 		foreach ( $logs as $entry ) {
 			$table_data[] = array(
-				'Timestamp' => $entry['timestamp'],
-				'Event'     => $entry['event'],
-				'Dry Run'   => $entry['dry_run'] ? 'Yes' : 'No',
-				'Unread'    => $entry['unread_deleted'],
-				'Read'      => $entry['read_deleted'],
-				'Meta'      => $entry['meta_deleted'],
+				'Timestamp'       => $entry['timestamp'],
+				'Event'           => $entry['event'],
+				'Dry Run'         => $entry['dry_run'] ? 'Yes' : 'No',
+				'Never Logged In' => isset( $entry['never_logged_in_deleted'] ) ? $entry['never_logged_in_deleted'] : 0,
+				'Unread'          => $entry['unread_deleted'],
+				'Read'            => $entry['read_deleted'],
+				'Meta'            => $entry['meta_deleted'],
 			);
 		}
 
-		WP_CLI\Utils\format_items( 'table', $table_data, array( 'Timestamp', 'Event', 'Dry Run', 'Unread', 'Read', 'Meta' ) );
+		WP_CLI\Utils\format_items( 'table', $table_data, array( 'Timestamp', 'Event', 'Dry Run', 'Never Logged In', 'Unread', 'Read', 'Meta' ) );
 	}
 }

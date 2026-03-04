@@ -55,6 +55,7 @@ Notification Table Statistics
 
 Row Counts:
   Total notifications:  246703
+  Never logged in:      1200
   Unread (is_new=1):    243617
   Read (is_new=0):      3086
   Meta rows:            257292
@@ -135,6 +136,10 @@ BP's `_delete()` method does `SELECT *` on all matching rows, loads them into PH
 ### Cache invalidation
 
 After a live purge, the plugin flushes BP's notification cache groups (`bp_notifications`, `bp_notifications_unread_count`, `bp_notifications_grouped_notifications`, `notification_meta`) via `wp_cache_flush_group()`, falling back to `wp_cache_flush()` if group-level flushing isn't available.
+
+### Never-logged-in cleanup
+
+Notifications for users without a `wpf_last_login` usermeta entry are deleted on every run.
 
 ## Settings
 

@@ -17,6 +17,7 @@ BuddyBoss has no built-in expiration for notifications, so tables can grow indef
 Highlights:
 
 * Daily cron purge with configurable thresholds for unread and read notifications.
+* Notifications for users who have never logged in are deleted automatically.
 * Memory-safe batch deletion using an ID-range cursor.
 * WP-CLI commands for stats, dry runs, and logs.
 * Modular structure for future cleanup modules.
@@ -27,6 +28,12 @@ Highlights:
 2. Activate the plugin in the WordPress admin.
 
 The daily cron job is scheduled automatically on activation.
+
+== Usage ==
+
+Use WP-CLI to run or preview cleanups:
+
+`wp bp-cleanup notifications run --dry-run`
 
 == Frequently Asked Questions ==
 
@@ -39,6 +46,10 @@ The notification tables must exist, but the component does not need to be active
 Use WP-CLI:
 
 `wp bp-cleanup notifications run --dry-run`
+
+= How does it determine that a user has never logged in? =
+
+Users without a `wpf_last_login` usermeta entry are treated as never logged in.
 
 == Changelog ==
 

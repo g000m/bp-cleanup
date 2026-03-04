@@ -19,12 +19,13 @@ class BPCU_Notification_Logger {
 		$log = get_option( BPCU_NOTIFICATIONS_LOG_KEY, array() );
 
 		$entry = array(
-			'timestamp'      => gmdate( 'Y-m-d H:i:s' ),
-			'event'          => $event,
-			'dry_run'        => $dry_run,
-			'unread_deleted' => isset( $counts['unread_deleted'] ) ? $counts['unread_deleted'] : 0,
-			'read_deleted'   => isset( $counts['read_deleted'] ) ? $counts['read_deleted'] : 0,
-			'meta_deleted'   => isset( $counts['meta_deleted'] ) ? $counts['meta_deleted'] : 0,
+			'timestamp'                 => gmdate( 'Y-m-d H:i:s' ),
+			'event'                     => $event,
+			'dry_run'                   => $dry_run,
+			'unread_deleted'            => isset( $counts['unread_deleted'] ) ? $counts['unread_deleted'] : 0,
+			'read_deleted'              => isset( $counts['read_deleted'] ) ? $counts['read_deleted'] : 0,
+			'never_logged_in_deleted'   => isset( $counts['never_logged_in_deleted'] ) ? $counts['never_logged_in_deleted'] : 0,
+			'meta_deleted'              => isset( $counts['meta_deleted'] ) ? $counts['meta_deleted'] : 0,
 		);
 
 		array_unshift( $log, $entry );
