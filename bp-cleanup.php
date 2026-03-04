@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: BP Cleanup
- * Description: Scheduled housekeeping for BuddyPress and BuddyBoss — purges old notifications and provides a framework for future cleanup modules.
+ * Description: Scheduled housekeeping for BuddyPress and BuddyBoss - purges old notifications and provides a framework for future cleanup modules.
  * Version: 1.0.0
- * Author: Evolutionary Herbalism
+ * Author: Gabe Herbert
  * License: GPL-2.0-or-later
  * Requires at least: 5.8
  * Requires PHP: 7.4
@@ -13,7 +13,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'BPCU_VERSION', '1.0.0' );
+$plugin_data = get_file_data( __FILE__, array( 'Version' => 'Version' ) );
+
+define( 'BPCU_VERSION', isset( $plugin_data['Version'] ) ? $plugin_data['Version'] : '1.0.0' );
 define( 'BPCU_PLUGIN_FILE', __FILE__ );
 define( 'BPCU_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
