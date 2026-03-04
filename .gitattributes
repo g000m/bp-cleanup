@@ -1,0 +1,5 @@
+/.github export-ignore
+/local_tests export-ignore
+/tests export-ignore
+/PHP_errors.log export-ignore
+/.gitattributes export-ignore

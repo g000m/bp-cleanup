@@ -22,6 +22,25 @@ wp plugin activate bp-cleanup
 
 The daily cron job is scheduled automatically on activation.
 
+### Composer (VCS)
+
+```bash
+composer config repositories.bp-cleanup vcs https://github.com/g000m/bp-cleanup
+composer require g000m/bp-cleanup:^1.0
+```
+
+## Updates (GitHub Releases)
+
+This plugin checks GitHub releases for updates. Release assets include the `vendor/` directory.
+
+### Release process
+
+1. Update `Version:` in `bp-cleanup.php` (authoritative) and match `version` in `composer.json`.
+2. Use a strict SemVer version (e.g., `1.2.3`). Pre-release versions are skipped.
+3. Push to `main`. The release workflow creates tag `vX.Y.Z`, builds the zip, and publishes the GitHub release.
+
+Releases are skipped when versions mismatch or the new version is not greater than the latest tag.
+
 ## WP-CLI Commands
 
 ### `wp bp-cleanup notifications stats`

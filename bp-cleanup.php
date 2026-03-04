@@ -19,6 +19,11 @@ define( 'BPCU_VERSION', isset( $plugin_data['Version'] ) ? $plugin_data['Version
 define( 'BPCU_PLUGIN_FILE', __FILE__ );
 define( 'BPCU_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 
+$autoload = BPCU_PLUGIN_DIR . 'vendor/autoload.php';
+if ( file_exists( $autoload ) ) {
+	require_once $autoload;
+}
+
 // Notifications module defaults.
 define( 'BPCU_DEFAULT_DAYS_UNREAD', 60 );
 define( 'BPCU_DEFAULT_DAYS_READ', 30 );
@@ -49,6 +54,16 @@ function bpcu_get_notification_settings() {
 
 // Load modules on plugins_loaded (tables may need cleanup even if BB is disabled).
 add_action( 'plugins_loaded', function () {
+	if ( class_exists( '\\YahnisElsts\\PluginUpdateChecker\\v5\\PucFactory' ) ) {
+		$update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+			'https://github.com/g000m/bp-cleanup/',
+			BPCU_PLUGIN_FILE,
+			'bp-cleanup'
+		);
+		$update_checker->setBranch( 'main' );
+		$update_checker->getVcsApi()->enableReleaseAssets();
+	}
+
 	require_once BPCU_PLUGIN_DIR . 'includes/class-purge-logger.php';
 	require_once BPCU_PLUGIN_DIR . 'includes/class-purge-engine.php';
 	require_once BPCU_PLUGIN_DIR . 'includes/class-cron-scheduler.php';
