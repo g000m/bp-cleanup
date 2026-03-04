@@ -28,8 +28,18 @@ class BPCU_Notification_Purge_Engine {
 
 		$table_notifications = $wpdb->prefix . 'bp_notifications';
 		$table_meta          = $wpdb->prefix . 'bp_notifications_meta';
-		$batch_size          = max( 100, (int) $settings['batch_size'] );
-		$sleep_us            = $is_cron ? 50000 : 0; // 50ms for cron
+
+		if ( ! self::tables_exist( array( $table_notifications, $table_meta ) ) ) {
+			return array(
+				'skipped' => true,
+				'reason'  => 'Required BuddyPress/BuddyBoss notification tables are missing.',
+			);
+		}
+
+		$settings['days_unread'] = max( 1, (int) $settings['days_unread'] );
+		$settings['days_read']   = max( 1, (int) $settings['days_read'] );
+		$batch_size              = max( 100, (int) $settings['batch_size'] );
+		$sleep_us                = $is_cron ? 50000 : 0; // 50ms for cron
 
 		$results = array(
 			'unread_deleted' => 0,
@@ -173,6 +183,25 @@ class BPCU_Notification_Purge_Engine {
 	}
 
 	/**
+	 * Check that all required tables exist.
+	 *
+	 * @param array $tables Table names.
+	 * @return bool
+	 */
+	private static function tables_exist( $tables ) {
+		global $wpdb;
+
+		foreach ( $tables as $table ) {
+			$found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+			if ( $found !== $table ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
 	 * Flush BuddyBoss notification caches.
 	 */
 	private static function flush_caches() {
@@ -192,11 +221,6 @@ class BPCU_Notification_Purge_Engine {
 				wp_cache_flush_group( $group );
 			}
 		}
-
-		// If group flush isn't available, do a full flush as last resort.
-		if ( ! function_exists( 'wp_cache_flush_group' ) ) {
-			wp_cache_flush();
-		}
 	}
 
 	/**
@@ -209,6 +233,17 @@ class BPCU_Notification_Purge_Engine {
 
 		$table_notifications = $wpdb->prefix . 'bp_notifications';
 		$table_meta          = $wpdb->prefix . 'bp_notifications_meta';
+
+		if ( ! self::tables_exist( array( $table_notifications, $table_meta ) ) ) {
+			return array(
+				'total_notifications' => 0,
+				'unread_count'        => 0,
+				'read_count'          => 0,
+				'meta_count'          => 0,
+				'oldest_notification' => 'N/A',
+				'notice'              => 'Required BuddyPress/BuddyBoss notification tables are missing.',
+			);
+		}
 
 		$stats = array();
 
