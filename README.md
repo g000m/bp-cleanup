@@ -8,8 +8,8 @@ BuddyBoss has no built-in expiration for notifications — they accumulate indef
 
 ## Requirements
 
-- WordPress 5.8+
-- PHP 7.4+
+- WordPress 6.9+
+- PHP 8.0+
 - BuddyPress or BuddyBoss Platform (tables must exist; component does not need to be active)
 
 ## Installation

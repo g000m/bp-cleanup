@@ -5,8 +5,8 @@
  * Version: 1.0.0
  * Author: Gabe Herbert
  * License: GPL-2.0-or-later
- * Requires at least: 5.8
- * Requires PHP: 7.4
+ * Requires at least: 6.9
+ * Requires PHP: 8.0
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -61,7 +61,11 @@ add_action( 'plugins_loaded', function () {
 			'bp-cleanup'
 		);
 		$update_checker->setBranch( 'main' );
-		$update_checker->getVcsApi()->enableReleaseAssets();
+
+		$vcs_api = $update_checker->getVcsApi();
+		if ( $vcs_api && method_exists( $vcs_api, 'enableReleaseAssets' ) ) {
+			$vcs_api->enableReleaseAssets();
+		}
 	}
 
 	require_once BPCU_PLUGIN_DIR . 'includes/class-purge-logger.php';
