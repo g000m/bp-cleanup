@@ -1,15 +1,24 @@
 name: Release
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
   release:
+    if: >-
+      ${
+        (github.event_name == 'workflow_run' &&
+        github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.head_branch == 'main') ||
+        (github.event_name == 'workflow_dispatch')
+      }
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -28,24 +37,16 @@ jobs:
         run: |
           set -euo pipefail
           plugin_version=$(grep -E "^\s*\* Version:" bp-cleanup.php | head -n1 | sed -E 's/.*Version:\s*([0-9]+\.[0-9]+\.[0-9]+).*/\1/')
-          composer_version=$(php -r "echo json_decode(file_get_contents('composer.json'), true)['version'] ?? '';" )
           echo "plugin_version=${plugin_version}" >> "$GITHUB_OUTPUT"
-          echo "composer_version=${composer_version}" >> "$GITHUB_OUTPUT"
 
       - name: Guard release conditions
         id: guard
         run: |
           set -euo pipefail
           plugin_version="${{ steps.versions.outputs.plugin_version }}"
-          composer_version="${{ steps.versions.outputs.composer_version }}"
 
-          if [ -z "$plugin_version" ] || [ -z "$composer_version" ]; then
-            echo "Missing version in bp-cleanup.php or composer.json." >&2
-            exit 1
-          fi
-
-          if [ "$plugin_version" != "$composer_version" ]; then
-            echo "Version mismatch: bp-cleanup.php=$plugin_version composer.json=$composer_version" >&2
+          if [ -z "$plugin_version" ]; then
+            echo "Missing version in bp-cleanup.php." >&2
             exit 1
           fi
 
