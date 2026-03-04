@@ -2,7 +2,7 @@
 /**
  * Plugin Name: BP Cleanup
  * Description: Scheduled housekeeping for BuddyPress and BuddyBoss - purges old notifications and provides a framework for future cleanup modules.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Gabe Herbert
  * License: GPL-2.0-or-later
  * Requires at least: 6.9
