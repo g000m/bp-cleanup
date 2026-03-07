@@ -53,6 +53,7 @@ function bpcu_get_notification_settings() {
 }
 
 // Load modules on plugins_loaded (tables may need cleanup even if BB is disabled).
+// @TODO don't load any of this during requests where it is irrelevant (e.g. non-admin, non-cron, non-WP-CLI).
 add_action( 'plugins_loaded', function () {
 	if ( class_exists( '\\YahnisElsts\\PluginUpdateChecker\\v5\\PucFactory' ) ) {
 		$update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
