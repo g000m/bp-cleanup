@@ -52,42 +52,6 @@ function bpcu_get_notification_settings() {
 	return wp_parse_args( $saved, $defaults );
 }
 
-/**
- * Restrict plugin update bootstrap to requests that can actually use it.
- */
-function bpcu_should_boot_update_checker() {
-	if ( is_admin() ) {
-		return true;
-	}
-
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
-		return true;
-	}
-
-	return wp_doing_cron() || ( defined( 'DOING_CRON' ) && DOING_CRON );
-}
-
-/**
- * Boot the plugin update checker only in request types that can use it.
- */
-function bpcu_boot_update_checker() {
-	if ( bpcu_should_boot_update_checker() && class_exists( '\\YahnisElsts\\PluginUpdateChecker\\v5\\PucFactory' ) ) {
-		$update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
-			'https://github.com/g000m/bp-cleanup/',
-			BPCU_PLUGIN_FILE,
-			'bp-cleanup'
-		);
-		$update_checker->setBranch( 'main' );
-
-		$vcs_api = $update_checker->getVcsApi();
-		if ( $vcs_api && method_exists( $vcs_api, 'enableReleaseAssets' ) ) {
-			$vcs_api->enableReleaseAssets();
-		}
-	}
-}
-
-add_action( 'init', 'bpcu_boot_update_checker' );
-
 // Load cleanup modules on plugins_loaded (tables may need cleanup even if BB is disabled).
 add_action( 'plugins_loaded', function () {
 
@@ -103,6 +67,29 @@ add_action( 'plugins_loaded', function () {
 		WP_CLI::add_command( 'bp-cleanup notifications', 'BPCU_Notifications_CLI_Command' );
 	}
 } );
+
+/**
+ * Boot the plugin update checker only in request types that can use it.
+ */
+function bpcu_boot_update_checker() {
+	if ( ( is_admin() || ( defined( 'WP_CLI' ) && WP_CLI ) || wp_doing_cron() )
+	     && class_exists( '\\YahnisElsts\\PluginUpdateChecker\\v5\\PucFactory' )
+	) {
+		$update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+			'https://github.com/g000m/bp-cleanup/',
+			BPCU_PLUGIN_FILE,
+			'bp-cleanup'
+		);
+		$update_checker->setBranch( 'main' );
+
+		$vcs_api = $update_checker->getVcsApi();
+		if ( $vcs_api && method_exists( $vcs_api, 'enableReleaseAssets' ) ) {
+			$vcs_api->enableReleaseAssets();
+		}
+	}
+}
+
+add_action( 'init', 'bpcu_boot_update_checker' );
 
 // Activation: schedule cron.
 register_activation_hook( __FILE__, function () {
