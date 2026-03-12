@@ -52,10 +52,26 @@ function bpcu_get_notification_settings() {
 	return wp_parse_args( $saved, $defaults );
 }
 
-// Load modules on plugins_loaded (tables may need cleanup even if BB is disabled).
-// @TODO don't load any of this during requests where it is irrelevant (e.g. non-admin, non-cron, non-WP-CLI).
-add_action( 'plugins_loaded', function () {
-	if ( class_exists( '\\YahnisElsts\\PluginUpdateChecker\\v5\\PucFactory' ) ) {
+/**
+ * Restrict plugin update bootstrap to requests that can actually use it.
+ */
+function bpcu_should_boot_update_checker() {
+	if ( is_admin() ) {
+		return true;
+	}
+
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		return true;
+	}
+
+	return wp_doing_cron() || ( defined( 'DOING_CRON' ) && DOING_CRON );
+}
+
+/**
+ * Boot the plugin update checker only in request types that can use it.
+ */
+function bpcu_boot_update_checker() {
+	if ( bpcu_should_boot_update_checker() && class_exists( '\\YahnisElsts\\PluginUpdateChecker\\v5\\PucFactory' ) ) {
 		$update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
 			'https://github.com/g000m/bp-cleanup/',
 			BPCU_PLUGIN_FILE,
@@ -68,6 +84,12 @@ add_action( 'plugins_loaded', function () {
 			$vcs_api->enableReleaseAssets();
 		}
 	}
+}
+
+add_action( 'init', 'bpcu_boot_update_checker' );
+
+// Load cleanup modules on plugins_loaded (tables may need cleanup even if BB is disabled).
+add_action( 'plugins_loaded', function () {
 
 	require_once BPCU_PLUGIN_DIR . 'includes/class-purge-logger.php';
 	require_once BPCU_PLUGIN_DIR . 'includes/class-purge-engine.php';
@@ -76,7 +98,7 @@ add_action( 'plugins_loaded', function () {
 	BPCU_Notification_Cron_Scheduler::init();
 
 	// Load WP-CLI commands if running in CLI.
-	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+	if ( defined( 'WP_CLI' ) && WP_CLI && class_exists( 'WP_CLI' ) ) {
 		require_once BPCU_PLUGIN_DIR . 'includes/class-cli-command.php';
 		WP_CLI::add_command( 'bp-cleanup notifications', 'BPCU_Notifications_CLI_Command' );
 	}
