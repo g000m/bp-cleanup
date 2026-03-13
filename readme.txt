@@ -4,7 +4,7 @@ Tags: buddypress, buddyboss, notifications, cleanup, cron, wp-cli
 Requires at least: 6.9
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.1.2
+Stable tag: 1.2.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -53,15 +53,20 @@ Use WP-CLI:
 
 `wp bp-cleanup notifications run --dry-run`
 
-= Can I force cron or scripted CLI runs into test mode? =
 
-Yes. Define `BPCU_FORCE_DRY_RUN` in `wp-config.php` to force non-interactive WP-CLI runs into dry-run mode. This does not change normal interactive terminal runs.
+= Can I force scripted CLI runs into test mode? =
+
+Yes. Define `BPCU_FORCE_DRY_RUN` in `wp-config.php` to force non-interactive WP-CLI runs into dry-run mode. This does not change cron runs or normal interactive terminal runs.
 
 = How does it determine that a user has never logged in? =
 
 Users without a `wpf_last_login` usermeta entry are treated as never logged in.
 
 == Changelog ==
+
+= 1.2.0 =
+* Add `BPCU_FORCE_DRY_RUN` for forcing non-interactive WP-CLI cleanup runs into dry-run mode.
+* Log forced dry-run purge summaries to the configured PHP error log without deleting data.
 
 = 1.1.2 =
 * Version bump and workflow adjustments.
@@ -78,6 +83,9 @@ Users without a `wpf_last_login` usermeta entry are treated as never logged in.
 * Initial release.
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Adds a `wp-config.php` safeguard for non-interactive WP-CLI cleanup runs, forcing dry-run mode and logging purge stats.
 
 = 1.1.2 =
 Version bump and workflow adjustments.
