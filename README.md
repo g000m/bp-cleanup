@@ -78,6 +78,14 @@ Current Settings:
 
 Run the purge. Use `--dry-run` to count qualifying rows without deleting anything.
 
+If you want an extra safety guard for scripted runs, define this in `wp-config.php`:
+
+```php
+define( 'BPCU_FORCE_DRY_RUN', true );
+```
+
+When enabled, non-interactive WP-CLI runs are forced into dry-run mode even if `--dry-run` is omitted. The command still prints purge counts and mirrors a summary like `[bp-cleanup] Forced dry-run results: ...` to the configured PHP error log, but it does not delete any data. Normal interactive terminal runs are unchanged.
+
 ```bash
 # Preview what would be deleted
 wp bp-cleanup notifications run --dry-run

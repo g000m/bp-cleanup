@@ -50,8 +50,9 @@ class BPCU_Notifications_CLI_Command extends WP_CLI_Command {
 	 * @param array $assoc_args Named args.
 	 */
 	public function run( $args, $assoc_args ) {
-		$dry_run   = WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', false );
-		$overrides = array();
+		$forced_dry_run = bpcu_force_cli_dry_run();
+		$dry_run        = $forced_dry_run || WP_CLI\Utils\get_flag_value( $assoc_args, 'dry-run', false );
+		$overrides      = array();
 
 		if ( isset( $assoc_args['unread-days'] ) ) {
 			$overrides['days_unread'] = (int) $assoc_args['unread-days'];
@@ -72,12 +73,17 @@ class BPCU_Notifications_CLI_Command extends WP_CLI_Command {
 		// Always treat as enabled when running via CLI.
 		$overrides['enabled'] = true;
 
-		$mode = $dry_run ? 'DRY RUN' : 'LIVE';
+		$mode = $forced_dry_run ? 'FORCED DRY RUN' : ( $dry_run ? 'DRY RUN' : 'LIVE' );
 		WP_CLI::log( "Starting notification purge ({$mode})..." );
+
+		if ( $forced_dry_run ) {
+			WP_CLI::warning( 'BPCU_FORCE_DRY_RUN is enabled; this non-interactive WP-CLI run will not delete data.' );
+		}
 
 		$results = BPCU_Notification_Purge_Engine::run( $dry_run, $overrides, false );
 
 		if ( isset( $results['skipped'] ) ) {
+			$this->maybe_log_forced_dry_run_result( $forced_dry_run, $results );
 			WP_CLI::warning( $results['reason'] );
 			return;
 		}
@@ -95,7 +101,38 @@ class BPCU_Notifications_CLI_Command extends WP_CLI_Command {
 		}
 
 		$total = $results['unread_deleted'] + $results['read_deleted'] + $results['never_logged_in_deleted'];
+		$this->maybe_log_forced_dry_run_result( $forced_dry_run, $results );
 		WP_CLI::success( "{$verb} {$total} total notifications." );
+	}
+
+	/**
+	 * Write forced dry-run results to the PHP error log.
+	 *
+	 * @param bool  $forced_dry_run Whether forced dry-run mode is active.
+	 * @param array $results        Purge results.
+	 */
+	private function maybe_log_forced_dry_run_result( $forced_dry_run, $results ) {
+		if ( ! $forced_dry_run ) {
+			return;
+		}
+
+		if ( isset( $results['skipped'] ) ) {
+			bpcu_write_php_error_log( '[bp-cleanup] Forced dry-run skipped: ' . $results['reason'] );
+			return;
+		}
+
+		$total = $results['unread_deleted'] + $results['read_deleted'] + $results['never_logged_in_deleted'];
+
+		bpcu_write_php_error_log(
+			sprintf(
+				'[bp-cleanup] Forced dry-run results: total=%d never_logged_in=%d unread=%d read=%d meta=%d',
+				$total,
+				(int) $results['never_logged_in_deleted'],
+				(int) $results['unread_deleted'],
+				(int) $results['read_deleted'],
+				(int) $results['meta_deleted']
+			)
+		);
 	}
 
 	/**

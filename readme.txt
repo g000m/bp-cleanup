@@ -35,6 +35,12 @@ Use WP-CLI to run or preview cleanups:
 
 `wp bp-cleanup notifications run --dry-run`
 
+To force scripted WP-CLI runs to stay in dry-run mode, add this to `wp-config.php`:
+
+`define( 'BPCU_FORCE_DRY_RUN', true );`
+
+When that constant is enabled, non-interactive WP-CLI runs log purge stats to the PHP error log and do not delete data.
+
 == Frequently Asked Questions ==
 
 = Does this require BuddyPress or BuddyBoss to be active? =
@@ -46,6 +52,10 @@ The notification tables must exist, but the component does not need to be active
 Use WP-CLI:
 
 `wp bp-cleanup notifications run --dry-run`
+
+= Can I force cron or scripted CLI runs into test mode? =
+
+Yes. Define `BPCU_FORCE_DRY_RUN` in `wp-config.php` to force non-interactive WP-CLI runs into dry-run mode. This does not change normal interactive terminal runs.
 
 = How does it determine that a user has never logged in? =
 

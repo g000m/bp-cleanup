@@ -34,6 +34,59 @@ define( 'BPCU_NOTIFICATIONS_CRON_HOOK', 'bpcu_notifications_daily_purge' );
 define( 'BPCU_NOTIFICATIONS_SETTINGS_KEY', 'bpcu_notifications_settings' );
 define( 'BPCU_NOTIFICATIONS_LOG_KEY', 'bpcu_notifications_log' );
 
+if ( ! defined( 'BPCU_FORCE_DRY_RUN' ) ) {
+	define( 'BPCU_FORCE_DRY_RUN', false );
+}
+
+/**
+ * Determine whether the current WP-CLI process is non-interactive.
+ *
+ * @return bool
+ */
+function bpcu_is_non_interactive_wp_cli() {
+	if ( ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+		return false;
+	}
+
+	if ( defined( 'STDIN' ) ) {
+		if ( function_exists( 'stream_isatty' ) ) {
+			return ! stream_isatty( STDIN );
+		}
+
+		if ( function_exists( 'posix_isatty' ) ) {
+			return ! posix_isatty( STDIN );
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Determine whether WP-CLI should be forced into dry-run mode.
+ *
+ * @return bool
+ */
+function bpcu_force_cli_dry_run() {
+	return BPCU_FORCE_DRY_RUN && bpcu_is_non_interactive_wp_cli();
+}
+
+/**
+ * Write a message to the configured PHP error log.
+ *
+ * @param string $message Log message.
+ * @return void
+ */
+function bpcu_write_php_error_log( $message ) {
+	$destination = trim( (string) ini_get( 'error_log' ) );
+
+	if ( '' !== $destination && 'syslog' !== strtolower( $destination ) ) {
+		error_log( $message . PHP_EOL, 3, $destination );
+		return;
+	}
+
+	error_log( $message );
+}
+
 /**
  * Get notification purge settings merged with defaults.
  */
